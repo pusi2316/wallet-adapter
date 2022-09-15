@@ -1,11 +1,10 @@
 import { WalletDisconnectButton, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import type { NextPage } from 'next';
-import { BaseMessageSignerWalletAdapter } from '@solana/wallet-adapter-base';
 import styles from '../styles/Home.module.css';
 import {
 	AnchorProvider, BN, Program, utils, web3
 } from '@project-serum/anchor';
-import {  Connection, PublicKey } from '@solana/web3.js';
+import {  Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {useAnchorWallet } from '@solana/wallet-adapter-react';
 const idl = require('../public/idl.json');
 const utf8 = utils.bytes.utf8
@@ -29,7 +28,7 @@ const Home: NextPage = () => {
         try {
             
             const [balancePda] = await web3.PublicKey.findProgramAddress(
-                [utf8.encode('contractbalance'), anchorWallet.publicKey.toBuffer()],
+                [utf8.encode('contractbalance'), program.programId.toBuffer()],
                 program.programId,
             );
 
@@ -40,12 +39,12 @@ const Home: NextPage = () => {
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
             })
-            .transaction();
+            .rpc();
 
-            trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-            trans.feePayer = anchorWallet.publicKey;
+            // trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            // trans.feePayer = anchorWallet.publicKey;
 
-            anchorWallet.signTransaction(trans);
+            // anchorWallet.signTransaction(trans);
 
             console.log("trans", trans);
 
@@ -68,44 +67,71 @@ const Home: NextPage = () => {
         const program = new Program(idl, idl.metadata.address, provider);
         
         try {
-            const [balancePda] = await PublicKey.findProgramAddress(
-                [utf8.encode('contractbalance'), anchorWallet.publicKey.toBuffer()],
+            const [balancePda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('contractbalance'), program.programId.toBuffer()],
                 program.programId,
             );
             
-            const lastDeposit =  web3.Keypair.generate();
-            
-            await program.methods.initializeLastDeposit().accounts({
-                lastDeposit: lastDeposit.publicKey,
-                user: anchorWallet.publicKey,
-                systeProgram: web3.SystemProgram.programId, 
-            })
-            .signers([lastDeposit])
-            .rpc();
-            
-console.log("Last Deposit Account: ", lastDeposit);
+            //const lastDeposit =  web3.Keypair.generate();
+            const [lastDeposit] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
+                program.programId,
+            );
+
+            let hasLastDeposit;
+            let asd;
+            const fetchedLastDeposit = await program.account.lastDeposit
+                .fetch(lastDeposit)
+                .then((response) => { 
+                    hasLastDeposit = true;
+                    console.log("Beléptem geci.");
+                    console.log("LastDeposit amount", response.amount.toNumber());
+                    asd = response;
+                })
+                .catch(error => {
+                    hasLastDeposit = false;
+                    console.log('There was an error!', error);
+                });
+
+            let userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
+            console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
+            console.log(hasLastDeposit);
+            if (!hasLastDeposit) {
+                console.log("Creating last deposit.")
+                await program.methods.initializeLastDeposit().accounts({
+                    lastDeposit: lastDeposit,
+                    user: anchorWallet.publicKey,
+                    systemProgram: web3.SystemProgram.programId, 
+                })
+                .rpc();
+            }
+
+            console.log("Last Deposit Account: ", lastDeposit);
             
             const trans = await program.methods.transfer(new BN(20000), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
-                lastDeposit: lastDeposit.publicKey,
+                lastDeposit: lastDeposit,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
               })
-                .transaction();
+                .rpc();
 
-            trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-            trans.feePayer = anchorWallet.publicKey;
+            // trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            // trans.feePayer = anchorWallet.publicKey;
 
-            anchorWallet.signTransaction(trans);
+            // anchorWallet.signTransaction(trans);
             
             let balance = await provider.connection.getBalance(balancePda);
 
             console.log("trans", trans);
             
-            console.log("Balance on the PDA, ", balance);
+            console.log("Balance on the PDA, ", balance / LAMPORTS_PER_SOL);
 
             const pda = await program.account.contractBalance.fetch(balancePda);
             console.log("BalancePda: ", pda);
+
+            userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
+            console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
         } catch (err) {
             console.log(err);
         }

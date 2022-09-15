@@ -1,0 +1,150 @@
+{
+    "version": "0.1.0",
+    "name": "blockchain",
+    "instructions": [
+      {
+        "name": "initialize",
+        "accounts": [
+          {
+            "name": "contractBalance",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "initializeLastDeposit",
+        "accounts": [
+          {
+            "name": "lastDeposit",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": []
+      },
+      {
+        "name": "transfer",
+        "accounts": [
+          {
+            "name": "contractBalance",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "lastDeposit",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "lamports",
+            "type": "u64"
+          },
+          {
+            "name": "fromPubkey",
+            "type": "publicKey"
+          }
+        ]
+      },
+      {
+        "name": "withdraw",
+        "accounts": [
+          {
+            "name": "contractBalance",
+            "isMut": true,
+            "isSigner": false
+          },
+          {
+            "name": "user",
+            "isMut": true,
+            "isSigner": true
+          },
+          {
+            "name": "systemProgram",
+            "isMut": false,
+            "isSigner": false
+          }
+        ],
+        "args": [
+          {
+            "name": "lamports",
+            "type": "u64"
+          }
+        ]
+      }
+    ],
+    "accounts": [
+      {
+        "name": "ContractBalance",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "bump",
+              "type": "u64"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            }
+          ]
+        }
+      },
+      {
+        "name": "LastDeposit",
+        "type": {
+          "kind": "struct",
+          "fields": [
+            {
+              "name": "timestamp",
+              "type": "i64"
+            },
+            {
+              "name": "amount",
+              "type": "u64"
+            },
+            {
+              "name": "hatchAmount",
+              "type": "u64"
+            }
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "address": "DkVcmDLBkbk23jXXayihWL4ZJWTWiqW4Meupv1F6s2Nn"
+    }
+  }
