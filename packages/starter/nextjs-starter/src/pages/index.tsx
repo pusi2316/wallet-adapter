@@ -108,7 +108,7 @@ const Home: NextPage = () => {
 
             console.log("Last Deposit Account: ", lastDeposit);
             
-            const trans = await program.methods.transfer(new BN(20000), anchorWallet.publicKey).accounts({
+            const trans = await program.methods.transfer(new BN(2000000), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
                 user: anchorWallet.publicKey,
@@ -137,6 +137,86 @@ const Home: NextPage = () => {
         }
     }
 
+
+    async function WithdrawSol() {
+        if (!anchorWallet) {
+            return;
+        }
+        const network = "http://127.0.0.1:8899";
+        const connection = new Connection(network, "processed");
+        const provider = new AnchorProvider(
+          connection, anchorWallet, {"preflightCommitment": "processed"},
+        );
+        const program = new Program(idl, idl.metadata.address, provider);
+        
+        try {
+            const [balancePda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('contractbalance'), program.programId.toBuffer()],
+                program.programId,
+            );
+            
+            //const lastDeposit =  web3.Keypair.generate();
+            // const [lastDeposit] = await web3.PublicKey.findProgramAddress(
+            //     [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
+            //     program.programId,
+            // );
+
+            // let hasLastDeposit;
+            // let asd;
+            // const fetchedLastDeposit = await program.account.lastDeposit
+            //     .fetch(lastDeposit)
+            //     .then((response) => { 
+            //         hasLastDeposit = true;
+            //         console.log("Beléptem geci.");
+            //         console.log("LastDeposit amount", response.amount.toNumber());
+            //         asd = response;
+            //     })
+            //     .catch(error => {
+            //         hasLastDeposit = false;
+            //         console.log('There was an error!', error);
+            //     });
+
+            // let userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
+            // console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
+            // console.log(hasLastDeposit);
+            // if (!hasLastDeposit) {
+            //     console.log("Creating last deposit.")
+            //     await program.methods.initializeLastDeposit().accounts({
+            //         lastDeposit: lastDeposit,
+            //         user: anchorWallet.publicKey,
+            //         systemProgram: web3.SystemProgram.programId, 
+            //     })
+            //     .rpc();
+            // }
+            let userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
+            
+            const trans = await program.methods.withdraw(new BN(2000000)).accounts({
+                contractBalance: balancePda,
+                user: anchorWallet.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+              })
+                .rpc();
+
+            // trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+            // trans.feePayer = anchorWallet.publicKey;
+
+            // anchorWallet.signTransaction(trans);
+            
+            let balance = await provider.connection.getBalance(balancePda);
+
+            console.log("trans", trans);
+            
+            console.log("Balance on the PDA, ", balance / LAMPORTS_PER_SOL);
+
+            const pda = await program.account.contractBalance.fetch(balancePda);
+            console.log("BalancePda: ", pda);
+
+            userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
+            console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
+        } catch (err) {
+            console.log(err);
+        }
+    }
     return (
         <div className={styles.container}>
             <main className={styles.main}>
@@ -154,6 +234,9 @@ const Home: NextPage = () => {
                 </p>
                 <p>
                 <button onClick={DepositSol}>Make a Deposition</button>
+                </p>
+                <p>
+                <button onClick={WithdrawSol}>Draw a with.</button>
                 </p>
             </main>
         </div>
