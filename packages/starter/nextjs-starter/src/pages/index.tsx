@@ -13,6 +13,7 @@ const utf8 = utils.bytes.utf8
 const Home: NextPage = () => {
     const anchorWallet = useAnchorWallet();
     const [contractBalance, setContractBalance] = useState(0);
+    const [reward, setReward] = useState(0);
 
     async function sendTransaction() {
         if (!anchorWallet) {
@@ -228,6 +229,7 @@ const Home: NextPage = () => {
                     Welcome to <a href="https://nextjs.org">Next.js!</a>
                 </h1>
                 <div>Contract Balance: { contractBalance } SOL</div>
+                <div>Reward: { reward } SOL</div>
                 <div className={styles.walletButtons}>
                     <WalletMultiButton />
                     <WalletDisconnectButton />
