@@ -1,5 +1,6 @@
 import { WalletDisconnectButton, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import type { NextPage } from 'next';
+import React, { useEffect, useState } from "react";
 import styles from '../styles/Home.module.css';
 import {
 	AnchorProvider, BN, Program, utils, web3
@@ -11,6 +12,7 @@ const utf8 = utils.bytes.utf8
 
 const Home: NextPage = () => {
     const anchorWallet = useAnchorWallet();
+    const [contractBalance, setContractBalance] = useState(0);
 
     async function sendTransaction() {
         if (!anchorWallet) {
@@ -126,6 +128,7 @@ const Home: NextPage = () => {
             console.log("trans", trans);
             
             console.log("Balance on the PDA, ", balance / LAMPORTS_PER_SOL);
+            setContractBalance(balance / LAMPORTS_PER_SOL);
 
             const pda = await program.account.contractBalance.fetch(balancePda);
             console.log("BalancePda: ", pda);
@@ -155,11 +158,10 @@ const Home: NextPage = () => {
                 program.programId,
             );
             
-            //const lastDeposit =  web3.Keypair.generate();
-            // const [lastDeposit] = await web3.PublicKey.findProgramAddress(
-            //     [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
-            //     program.programId,
-            // );
+            const [lastDeposit] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
+                program.programId,
+            );
 
             // let hasLastDeposit;
             // let asd;
@@ -192,6 +194,7 @@ const Home: NextPage = () => {
             
             const trans = await program.methods.withdraw(new BN(2000000)).accounts({
                 contractBalance: balancePda,
+                lastDeposit: lastDeposit,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
               })
@@ -213,6 +216,7 @@ const Home: NextPage = () => {
 
             userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
             console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
+            setContractBalance(balance / LAMPORTS_PER_SOL);
         } catch (err) {
             console.log(err);
         }
@@ -223,7 +227,7 @@ const Home: NextPage = () => {
                 <h1 className={styles.title}>
                     Welcome to <a href="https://nextjs.org">Next.js!</a>
                 </h1>
-
+                <div>Contract Balance: { contractBalance } SOL</div>
                 <div className={styles.walletButtons}>
                     <WalletMultiButton />
                     <WalletDisconnectButton />
