@@ -34,11 +34,17 @@ const Home: NextPage = () => {
                 [utf8.encode('contractbalance'), program.programId.toBuffer()],
                 program.programId,
             );
+            
+            const [devAccountPda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('devaccount'), program.programId.toBuffer()],
+                program.programId,
+            );
 
             console.log("balancePda", balancePda);
 
             const trans = await program.methods.initialize().accounts({
                 contractBalance: balancePda,
+                devUser: devAccountPda,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
             })
@@ -81,6 +87,11 @@ const Home: NextPage = () => {
                 program.programId,
             );
 
+            const [devAccountPda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('devaccount'), program.programId.toBuffer()],
+                program.programId,
+            );
+
             let hasLastDeposit;
             let asd;
             const fetchedLastDeposit = await program.account.lastDeposit
@@ -114,6 +125,7 @@ const Home: NextPage = () => {
             const trans = await program.methods.transfer(new BN(2000000), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
+                devUser: devAccountPda,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
               })
