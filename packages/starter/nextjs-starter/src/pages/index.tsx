@@ -7,8 +7,11 @@ import {
 } from '@project-serum/anchor';
 import {  Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {useAnchorWallet } from '@solana/wallet-adapter-react';
+//const env = require('dotenv');
 const idl = require('../public/idl.json');
-const utf8 = utils.bytes.utf8
+const utf8 = utils.bytes.utf8;
+//Need to replace with environment variable.
+const devAccount = "3r34kuf9CJuhAM1D9XNXPe3N2h1y3vKHEzrdkXscxLeA";
 
 const Home: NextPage = () => {
     const anchorWallet = useAnchorWallet();
@@ -93,14 +96,10 @@ const Home: NextPage = () => {
             );
 
             let hasLastDeposit;
-            let asd;
             const fetchedLastDeposit = await program.account.lastDeposit
                 .fetch(lastDeposit)
                 .then((response) => { 
                     hasLastDeposit = true;
-                    console.log("Beléptem geci.");
-                    console.log("LastDeposit amount", response.amount.toNumber());
-                    asd = response;
                 })
                 .catch(error => {
                     hasLastDeposit = false;
@@ -121,11 +120,11 @@ const Home: NextPage = () => {
             }
 
             console.log("Last Deposit Account: ", lastDeposit);
-            
+            console.log("Dev user ", process.env.DEV_ADDRESS_PUBLICKEY?.toString)
             const trans = await program.methods.transfer(new BN(2000000), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
-                devUser: devAccountPda,
+                devUser: devAccount,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
               })
@@ -208,6 +207,7 @@ const Home: NextPage = () => {
             const trans = await program.methods.withdraw(new BN(2000000)).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
+                devUser: devAccount,
                 user: anchorWallet.publicKey,
                 systemProgram: web3.SystemProgram.programId,
               })
