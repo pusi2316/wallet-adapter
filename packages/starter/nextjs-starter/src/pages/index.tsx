@@ -17,6 +17,7 @@ const Home: NextPage = () => {
     const anchorWallet = useAnchorWallet();
     const [contractBalance, setContractBalance] = useState(0);
     const [reward, setReward] = useState(0);
+    const [deposition, setDeposition] = useState(0);
 
     async function sendTransaction() {
         if (!anchorWallet) {
@@ -121,7 +122,7 @@ const Home: NextPage = () => {
 
             console.log("Last Deposit Account: ", lastDeposit);
             console.log("Dev user ", process.env.DEV_ADDRESS_PUBLICKEY?.toString)
-            const trans = await program.methods.transfer(new BN(2000000), anchorWallet.publicKey).accounts({
+            const trans = await program.methods.transfer(new BN(deposition * LAMPORTS_PER_SOL), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
                 devUser: devAccount,
@@ -250,11 +251,13 @@ const Home: NextPage = () => {
                 <p className={styles.description}>
                     <button onClick={sendTransaction}>Init PDA</button>
                 </p>
+                <input type="number" placeholder="SOL" 
+          className="inputField" onChange={event => setDeposition(event.target.valueAsNumber)}/>
                 <p>
-                <button onClick={DepositSol}>Make a Deposition</button>
+                    <button onClick={DepositSol}>Make a Deposition</button>
                 </p>
                 <p>
-                <button onClick={WithdrawSol}>Draw a with.</button>
+                    <button onClick={WithdrawSol}>Draw a with.</button>
                 </p>
             </main>
         </div>
