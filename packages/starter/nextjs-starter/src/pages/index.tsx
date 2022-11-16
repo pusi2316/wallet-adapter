@@ -7,6 +7,7 @@ import {
 } from '@project-serum/anchor';
 import {  Connection, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import {useAnchorWallet } from '@solana/wallet-adapter-react';
+import { generateKeyPair } from 'crypto';
 //const env = require('dotenv');
 const idl = require('../public/idl.json');
 const utf8 = utils.bytes.utf8;
@@ -18,6 +19,105 @@ const Home: NextPage = () => {
     const [contractBalance, setContractBalance] = useState(0);
     const [reward, setReward] = useState(0);
     const [deposition, setDeposition] = useState(0);
+    const [marketStrength, setMarketStrength] = useState(0);
+
+    async function fetchPdaBalanceAndReward() {
+        if (!anchorWallet) {
+            return;
+        }
+        const network = "http://127.0.0.1:8899";
+        const connection = new Connection(network, "processed");
+        const provider = new AnchorProvider(
+          connection, anchorWallet, {"preflightCommitment": "processed"},
+        );
+
+        console.log(idl);
+        const program = new Program(idl, idl.metadata.address, provider);
+
+        try {
+            
+            const [balancePda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('contractbalance'), program.programId.toBuffer()],
+                program.programId,
+            );
+
+            const [lastDeposit] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
+                program.programId,
+            );
+            const rewardAccount = web3.Keypair.generate();
+            await program.methods.calculateReward().accounts({
+                contractBalance: balancePda,
+                lastDeposit: lastDeposit,
+                user: anchorWallet.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+            }).rpc();
+
+            const lastDepositPDA = await program.account.lastDeposit.fetch(lastDeposit);
+            const contractBalancePDA = await program.account.contractBalance.fetch(balancePda);
+
+            let balance = await provider.connection.getBalance(balancePda);
+            setContractBalance(balance / LAMPORTS_PER_SOL);
+            setReward(lastDepositPDA.reward.toNumber() / LAMPORTS_PER_SOL);
+            setMarketStrength(contractBalancePDA.marketStrengths.toNumber());
+
+            console.log("reward: ",lastDepositPDA.reward.toNumber());
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    async function Compound() {
+        if (!anchorWallet) {
+            return;
+        }
+        const network = "http://127.0.0.1:8899";
+        const connection = new Connection(network, "processed");
+        const provider = new AnchorProvider(
+          connection, anchorWallet, {"preflightCommitment": "processed"},
+        );
+
+        console.log(idl);
+        const program = new Program(idl, idl.metadata.address, provider);
+
+        try {
+            
+            const [balancePda] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('contractbalance'), program.programId.toBuffer()],
+                program.programId,
+            );
+
+            const [lastDeposit] = await web3.PublicKey.findProgramAddress(
+                [utf8.encode('lastdeposit'), anchorWallet.publicKey.toBuffer()],
+                program.programId,
+            );
+            const rewardAccount = web3.Keypair.generate();
+
+            await program.methods.compound().accounts({
+                contractBalance: balancePda,
+                lastDeposit: lastDeposit,
+                user: anchorWallet.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+            }).rpc();
+
+            await program.methods.calculateReward().accounts({
+                contractBalance: balancePda,
+                lastDeposit: lastDeposit,
+                user: anchorWallet.publicKey,
+                systemProgram: web3.SystemProgram.programId,
+            }).rpc();
+
+            const lastDepositPDA = await program.account.lastDeposit.fetch(lastDeposit);
+            const contractBalancePDA = await program.account.contractBalance.fetch(balancePda);
+
+            let balance = await provider.connection.getBalance(balancePda);
+            setContractBalance(balance / LAMPORTS_PER_SOL);
+            setReward(lastDepositPDA.reward.toNumber() / LAMPORTS_PER_SOL);
+            setMarketStrength(contractBalancePDA.marketStrengths.toNumber());
+        } catch (err) {
+            console.log(err);
+        }
+    }
 
     async function sendTransaction() {
         if (!anchorWallet) {
@@ -130,6 +230,8 @@ const Home: NextPage = () => {
                 systemProgram: web3.SystemProgram.programId,
               })
                 .rpc();
+            const lastDepositPda = await program.account.lastDeposit.fetch(lastDeposit)
+            console.log("claimed strength: ", lastDepositPda);
 
             // trans.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
             // trans.feePayer = anchorWallet.publicKey;
@@ -148,6 +250,7 @@ const Home: NextPage = () => {
 
             userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
             console.log("UserBalance {userBalance}", userBalance / LAMPORTS_PER_SOL);
+
         } catch (err) {
             console.log(err);
         }
@@ -235,6 +338,10 @@ const Home: NextPage = () => {
             console.log(err);
         }
     }
+
+    useEffect(() => {
+        console.log("use the effect")
+    }, [])
     return (
         <div className={styles.container}>
             <main className={styles.main}>
@@ -243,6 +350,7 @@ const Home: NextPage = () => {
                 </h1>
                 <div>Contract Balance: { contractBalance } SOL</div>
                 <div>Reward: { reward } SOL</div>
+                <div>Market Strength: { marketStrength } </div>
                 <div className={styles.walletButtons}>
                     <WalletMultiButton />
                     <WalletDisconnectButton />
@@ -258,6 +366,12 @@ const Home: NextPage = () => {
                 </p>
                 <p>
                     <button onClick={WithdrawSol}>Draw a with.</button>
+                </p>
+                <p>
+                    <button onClick={fetchPdaBalanceAndReward}>Calculate Reward.</button>
+                </p>
+                <p>
+                    <button onClick={Compound}>Compound Strength.</button>
                 </p>
             </main>
         </div>
