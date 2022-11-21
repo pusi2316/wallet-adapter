@@ -222,7 +222,7 @@ const Home: NextPage = () => {
 
             console.log("Last Deposit Account: ", lastDeposit);
             console.log("Dev user ", process.env.DEV_ADDRESS_PUBLICKEY?.toString)
-            const trans = await program.methods.transfer(new BN(deposition * LAMPORTS_PER_SOL), anchorWallet.publicKey).accounts({
+            const trans = await program.methods.buyStrength(new BN(deposition * LAMPORTS_PER_SOL), anchorWallet.publicKey).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
                 devUser: devAccount,
@@ -308,7 +308,7 @@ const Home: NextPage = () => {
             // }
             let userBalance = await provider.connection.getBalance(anchorWallet.publicKey);
             
-            const trans = await program.methods.withdraw(new BN(2000000)).accounts({
+            const trans = await program.methods.collectReward(new BN(2000000)).accounts({
                 contractBalance: balancePda,
                 lastDeposit: lastDeposit,
                 devUser: devAccount,
